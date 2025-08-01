@@ -1,0 +1,31 @@
+# === Core ML & Data ===
+pandas		# Tabular data processing
+scikit-learn	# Classical ML models and preprocessing
+xgboost		# Gradient boosting machine
+
+# === Hyper Optimization ===
+hyperopt	# Distributed hyperparameter turing (works with MLflow)
+
+# === Experiment Tracking ===
+mlflow		# Track and compare model runs, params, metrics
+
+# === Workflow Orchestration ===
+apache-airflow	# DAG-based orchestration
+
+# === Serving (FastAPI backend) ===
+fastapi		# API for model inference
+uvicorn		# ASGI server to run FastAPI
+
+# === Visualization ===
+matplotlib	# Basic plots
+shap		# Model explainability (SHAP values)
+
+# === File Upload Support ===
+python-multipart	# Recwuired for file uploads via FastAPI
+
+# === Optional / Future Add-ons ===
+# dvc		# Data and model versioning (defer for now)
+# streamlit	# Interactive dashboards
+# seaborn	# Statistical visualization
+# optuna 	# Alternative to Hyperopt (more modern, lightweight)
+# ligthgbm	# Alternative to XGBoost (faster on larger data)

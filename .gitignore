@@ -1,0 +1,29 @@
+# Python
+__pychache__/
+*.py[cod]
+*.ipynb_checkpoints
+
+# Environments
+.venv/
+.env
+
+# DVC and ML artifacts
+/data/
+models/
+mlruns/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker
+*.log
+*.pid
+*.sock
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
