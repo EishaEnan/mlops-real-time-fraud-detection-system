@@ -9,6 +9,9 @@ hyperopt	# Distributed hyperparameter turing (works with MLflow)
 # === Experiment Tracking ===
 mlflow		# Track and compare model runs, params, metrics
 
+# === Data Version Control ===
+dvc         # Data and model versioning
+
 # === Workflow Orchestration ===
 apache-airflow	# DAG-based orchestration
 
@@ -24,7 +27,6 @@ shap		# Model explainability (SHAP values)
 python-multipart	# Recwuired for file uploads via FastAPI
 
 # === Optional / Future Add-ons ===
-# dvc		# Data and model versioning (defer for now)
 # streamlit	# Interactive dashboards
 # seaborn	# Statistical visualization
 # optuna 	# Alternative to Hyperopt (more modern, lightweight)
