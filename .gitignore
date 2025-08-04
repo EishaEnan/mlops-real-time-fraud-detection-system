@@ -8,8 +8,14 @@ __pychache__/
 venv/
 .env
 
+# Ignore data files but not DVC tracking files
+data/raw/*
+!data/raw/*.dvc
+!data/raw/metadata.json
+data/processed/*
+!data/processed/*.dvc
+
 # ML artifacts
-/data/
 models/
 mlruns/
 
