@@ -5,6 +5,7 @@ __pychache__/
 
 # Environments
 .venv/
+venv/
 .env
 
 # DVC and ML artifacts
