@@ -30,6 +30,25 @@ This project is a real-time, end-to-end MLOps platform for detecting fraudulent 
 - `scripts/` – Utility or automation scripts
 
 ---
+## 📂 Dataset
+
+### Source: Synthetic Financial Datasets for Fraud Detection
+
+This dataset is a synthetic representation of mobile money transactions, generated using the **PaySim** simulator based on real transaction data from a financial service provider in an African country.
+
+- 📦 **File**: `data/raw/paysim.csv`
+- 📈 **Rows**: ~6 million (1 month of transactions, 744 steps = 744 hours)
+- 💳 **Transaction Types**: PAYMENT, TRANSFER, DEBIT, CASH_IN, CASH_OUT
+- ⚠️ **Fraud Indicator**: `isFraud` (target), `isFlaggedFraud` (flagged high-risk ops)
+- 🧾 **Note**: Balances (`oldbalanceOrig`, etc.) should not be used for fraud detection — they are post-processed to reflect canceled fraud transactions.
+
+📚 **Original Source**: [Kaggle – PaySim Dataset](https://www.kaggle.com/datasets/ealaxi/paysim1)  
+📄 **Citation**:
+> Lopez-Rojas, E. A., Elmir, A., & Axelsson, S. (2016). _PaySim: A financial mobile money simulator for fraud detection_. The 28th European Modeling and Simulation Symposium (EMSS), Larnaca, Cyprus.
+
+📘 **Related Research**: [PhD Thesis](http://urn.kb.se/resolve?urn=urn:nbn:se:bth-12932)
+
+---
 
 🔗 **Live App (Coming Soon):** [https://ml-tfds.eishaenan.com](https://ml-tfds.eishaenan.com)
 

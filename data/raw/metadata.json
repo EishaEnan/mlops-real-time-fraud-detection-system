@@ -1,0 +1,29 @@
+{
+  "name": "PaySim Synthetic Financial Dataset",
+  "source": "https://www.kaggle.com/datasets/ealaxi/paysim1",
+  "description": "A synthetic dataset simulating mobile money transactions over 30 days using the PaySim simulator. It includes realistic transaction behavior and injected fraud scenarios.",
+  "size_mb": 493.53,
+  "rows": 6362620,
+  "columns": 11,
+  "license": "CC0: Public Domain",
+  "features": {
+    "step": "Hour of the simulation (1 step = 1 hour)",
+    "type": "Transaction type (PAYMENT, TRANSFER, DEBIT, CASH_IN, CASH_OUT)",
+    "amount": "Transaction amount in local currency",
+    "nameOrig": "Customer who initiated the transaction",
+    "oldbalanceOrg": "Balance before transaction (do not use for fraud detection)",
+    "newbalanceOrig": "Balance after transaction (do not use for fraud detection)",
+    "nameDest": "Recipient customer",
+    "oldbalanceDest": "Recipient's balance before transaction (limited for merchants)",
+    "newbalanceDest": "Recipient's balance after transaction (limited for merchants)",
+    "isFraud": "Whether transaction was fraudulent (target label)",
+    "isFlaggedFraud": "Flagged transactions attempting > 200,000 transfer"
+  },
+  "notes": [
+    "Do not use balance fields as predictors — they are post-processed to reflect canceled fraud transactions.",
+    "Data is 1/4 scale of real-world data provided by a telecom operator in Africa.",
+    "Simulated for 744 steps (representing 30 days of hourly data)."
+  ],
+  "citation": "Lopez-Rojas, E. A., Elmir, A., & Axelsson, S. (2016). PaySim: A financial mobile money simulator for fraud detection. EMSS 2016."
+}
+
