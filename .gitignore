@@ -8,10 +8,15 @@ __pychache__/
 venv/
 .env
 
-# DVC and ML artifacts
+# ML artifacts
 /data/
 models/
 mlruns/
+
+# DVC
+.dvc/
+.dvc/tmp
+.dvc/cache
 
 # Jupyter
 .ipynb_checkpoints/
