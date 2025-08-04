@@ -20,6 +20,16 @@ This project is a real-time, end-to-end MLOps platform for detecting fraudulent 
 **Infra:** Docker, AWS EC2
 
 ---
+### 📂 Project Structure
+
+- `src/` – Core pipeline logic (data ingestion, preprocessing, training, evaluation, etc.)
+- `data/` – Raw and processed datasets (tracked with DVC)
+- `notebooks/` – EDA and prototyping notebooks
+- `models/` – Trained models (also tracked with DVC)
+- `streamlit_app/` – Frontend UI using Streamlit
+- `scripts/` – Utility or automation scripts
+
+---
 
 🔗 **Live App (Coming Soon):** [https://ml-tfds.eishaenan.com](https://ml-tfds.eishaenan.com)
 
