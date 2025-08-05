@@ -1,0 +1,5 @@
+[core]
+    remote = s3remote
+['remote "s3remote"']
+    url = s3://mlops-fraud-dvc/data
+    endpointurl = https://s3.ap-southeast-2.amazonaws.com
