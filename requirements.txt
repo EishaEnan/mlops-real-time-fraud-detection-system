@@ -11,6 +11,7 @@ mlflow		# Track and compare model runs, params, metrics
 
 # === AWS Integration ===
 boto3                   # Required for AWS S3 access (used by DVC and MLflow)
+awscli                  # AWS CLI for S3 config & DVC remote access
 
 # === Data Version Control ===
 dvc[s3]                 # Data and model versioning with S3 support
