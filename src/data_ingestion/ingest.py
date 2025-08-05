@@ -15,8 +15,9 @@ def load_raw_data(path):
 
 def basic_cleaning(df):
     """Perform basic cleaning on the DataFrame."""
-    drop_cols = ['oldBalanceOrig', 'oldBalanceDest', 'newBalanceOrig', 'newBalanceDest']
+    drop_cols = ['oldbalanceOrg', 'newbalanceOrg', 'oldbalanceDest', 'newbalanceDest']
     df_cleaned = df.drop(columns=drop_cols, errors='ignore')
+    print(f"Columns after dropping: {df_cleaned.columns.tolist()}")
     return df_cleaned
 
 def save_cleaned_data(df, output_path):
