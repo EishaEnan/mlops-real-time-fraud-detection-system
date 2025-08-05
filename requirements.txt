@@ -25,6 +25,7 @@ uvicorn		# ASGI server to run FastAPI
 
 # === Visualization ===
 matplotlib	# Basic plots
+seaborn     # Quick statistical plots (count, box, heatmap)
 shap		# Model explainability (SHAP values)
 
 # === File Upload Support ===

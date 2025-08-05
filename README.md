@@ -42,6 +42,9 @@ This dataset is a synthetic representation of mobile money transactions, generat
 - ⚠️ **Fraud Indicator**: `isFraud` (target), `isFlaggedFraud` (flagged high-risk ops)
 - 🧾 **Note**: Balances (`oldbalanceOrig`, etc.) should not be used for fraud detection — they are post-processed to reflect canceled fraud transactions.
 
+📊 **[EDA Summary](./reports/eda_summary.md)** — key findings and insights from data exploration.
+
+
 📚 **Original Source**: [Kaggle – PaySim Dataset](https://www.kaggle.com/datasets/ealaxi/paysim1)  
 📄 **Citation**:
 > Lopez-Rojas, E. A., Elmir, A., & Axelsson, S. (2016). _PaySim: A financial mobile money simulator for fraud detection_. The 28th European Modeling and Simulation Symposium (EMSS), Larnaca, Cyprus.
