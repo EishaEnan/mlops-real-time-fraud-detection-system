@@ -9,8 +9,11 @@ hyperopt	# Distributed hyperparameter turing (works with MLflow)
 # === Experiment Tracking ===
 mlflow		# Track and compare model runs, params, metrics
 
+# === AWS Integration ===
+boto3                   # Required for AWS S3 access (used by DVC and MLflow)
+
 # === Data Version Control ===
-dvc         # Data and model versioning
+dvc[s3]                 # Data and model versioning with S3 support
 
 # === Workflow Orchestration ===
 apache-airflow	# DAG-based orchestration
@@ -25,6 +28,10 @@ shap		# Model explainability (SHAP values)
 
 # === File Upload Support ===
 python-multipart	# Recwuired for file uploads via FastAPI
+
+# === Jupyter + Kernel Support ===
+ipykernel               # Register virtualenv as notebook kernel
+jupyterlab              # For running and editing notebooks
 
 # === Optional / Future Add-ons ===
 # streamlit	# Interactive dashboards
