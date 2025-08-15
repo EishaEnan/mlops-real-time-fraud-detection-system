@@ -1,0 +1,31 @@
+schema: '2.0'
+stages:
+  split_data:
+    cmd: python scripts/split_data.py --input data/processed/paysim_clean.csv 
+      --method time --train 0.70 --valid 0.15 --test 0.15
+    deps:
+    - path: data/processed/paysim_clean.csv
+      hash: md5
+      md5: 2e19fe13f38bcbf7f5c71f4dd4a7704c
+      size: 348997220
+    - path: scripts/split_data.py
+      hash: md5
+      md5: 4d89ced32306b986cf8942b5bbb3d920
+      size: 2863
+    outs:
+    - path: data/processed/split_stats.csv
+      hash: md5
+      md5: 1fe5800072df406bca83c548e8d5a68a
+      size: 183
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 1ad097bbff9ae32ee6ade21591176328
+      size: 52514400
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 6a1b765fe4218ea0673248d128cf5b2f
+      size: 243977525
+    - path: data/processed/valid.csv
+      hash: md5
+      md5: d95137db1e1cd006b1dffb7edb98b665
+      size: 52505441
