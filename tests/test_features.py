@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from common.features import build_features, prepare_training, TYPE_CATS
+from mlops_fraud.features import build_features, prepare_training, TYPE_CATS
 
 def _mk_rows(types):
     rows = []
