@@ -1,12 +1,23 @@
 # Python
 __pychache__/
 *.py[cod]
+*.egg-info
+src/*.egg-info/
+.dst-info/
+build/
+dist/
+
+# Jupyter
 *.ipynb_checkpoints
 .virtual_documents/
+notebooks/mlruns/
+
 
 # Environments
 .venv/
 venv/
+.pytest_cache/
+.mypy_cache/
 .env
 
 # Ignore data files but not DVC tracking files
@@ -33,10 +44,17 @@ mlruns/
 *.pid
 *.sock
 
+# AWS SAM
+.aws-sam/
+
 # VSCode
 .vscode/
+.vscode/
+.idea/
 
 # OS
 .DS_Store
 Thumbs.db
 
+# Misc
+TREE.txt

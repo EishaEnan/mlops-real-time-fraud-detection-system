@@ -5,7 +5,7 @@ import pytest
 pa = importlib.util.find_spec("pandera")
 pytestmark = pytest.mark.skipif(pa is None, reason="Pandera not installed")
 
-from common.schemas import TrainingSchema
+from mlops_fraud.schemas import TrainingSchema
 
 def test_training_schema():
     df = pd.DataFrame([{
