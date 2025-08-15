@@ -1,0 +1,14 @@
+stages:
+  split_data:
+    cmd: python scripts/split_data.py --input data/processed/paysim_clean.csv 
+      --method time --train 0.70 --valid 0.15 --test 0.15
+    deps:
+    - data/processed/paysim_clean.csv
+    - scripts/split_data.py
+    outs:
+    - data/processed/test.csv
+    - data/processed/train.csv
+    - data/processed/valid.csv
+    metrics:
+    - data/processed/split_stats.csv:
+        cache: false
