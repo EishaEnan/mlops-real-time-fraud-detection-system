@@ -7,8 +7,8 @@ from typing import List, Tuple
 # Canonical categories for 'type' (keeps OHE columns stable accross training runs)
 TYPE_CATS = ['CASH_IN', 'CASH_OUT', 'DEBIT', 'PAYMENT', 'TRANSFER']
 ID_COLS = ['nameOrig', 'nameDest']
-RAW_BALANCE_COLS = ['oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
-LABEL_COLS = ['isFraud']
+RAW_BAL_COLS = ['oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+LABEL_COL = "isFraud"
 _OHE_PREFIX = 'type_'
 
 def _ohe_type(df: pd.DataFrame) -> pd.DataFrame:
