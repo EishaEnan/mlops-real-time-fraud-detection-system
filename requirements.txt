@@ -8,7 +8,7 @@ hyperopt	# Distributed hyperparameter turing (works with MLflow)
 
 # === Experiment Tracking ===
 mlflow		# Track and compare model runs, params, metrics
-
+psycopg2-binary  # PostgreSQL driver for MLflow tracking server
 # === AWS Integration ===
 boto3                   # Required for AWS S3 access (used by DVC and MLflow)
 awscli                  # AWS CLI for S3 config & DVC remote access
