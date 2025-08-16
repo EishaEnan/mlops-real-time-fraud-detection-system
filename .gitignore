@@ -7,6 +7,14 @@ src/*.egg-info/
 build/
 dist/
 
+# docker volumes / local state
+postgres-data/
+minio-data/
+mlflow/
+mlflow_s3/
+**/mlruns/
+**/mlflow.db
+
 # Jupyter
 *.ipynb_checkpoints
 .virtual_documents/
@@ -58,3 +66,4 @@ Thumbs.db
 
 # Misc
 TREE.txt
+eval_snapshot.json
