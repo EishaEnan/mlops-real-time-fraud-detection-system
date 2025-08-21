@@ -51,6 +51,17 @@ This dataset is a synthetic representation of mobile money transactions, generat
 
 📘 **Related Research**: [PhD Thesis](http://urn.kb.se/resolve?urn=urn:nbn:se:bth-12932)
 
+### FastAPI Model Serving
+
+Once a model version is registered in MLflow, launch the API with:
+
+```bash
+uvicorn mlops_fraud.deployment.api:app --host 0.0.0.0 --port 8000
+```
+
+The service reads `MLFLOW_TRACKING_URI`, `MODEL_NAME` and `MODEL_ALIAS` to locate the model.
+Send a POST request to `/predict` with a JSON body matching `schemas.TransactionRequest`.
+
 ---
 
 🔗 **Live App (Coming Soon):** [https://ml-tfds.eishaenan.com](https://ml-tfds.eishaenan.com)
