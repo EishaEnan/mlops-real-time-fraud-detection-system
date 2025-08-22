@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY src /app/src
 
 RUN pip install --no-cache-dir \
-    mlflow==3.1.4 fastapi uvicorn[standard] pandas numpy scikit-learn xgboost pydantic boto3
+    mlflow==3.1.4 fastapi uvicorn[standard] pandas numpy scikit-learn xgboost pydantic boto3 prometheus-client 
 
 ENV PYTHONPATH=/app/src
 ENV MLFLOW_TRACKING_URI=http://mlflow:5000
