@@ -22,6 +22,7 @@ apache-airflow	# DAG-based orchestration
 # === Serving (FastAPI backend) ===
 fastapi		# API for model inference
 uvicorn		# ASGI server to run FastAPI
+prometheus-client   # Expose API metrics (/metrics) for Prometheus scraping
 
 # === Visualization ===
 matplotlib	# Basic plots

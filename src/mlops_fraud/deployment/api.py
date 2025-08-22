@@ -1,6 +1,8 @@
+#src/mlops_fraud/deployment/api.py
+# --- imports ---
 from __future__ import annotations
 import os, json, time, logging, threading, shutil, tempfile
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Literal
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
 import numpy as np
@@ -10,10 +12,14 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow import xgboost as mlf_xgb
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.exceptions import RequestValidationError
+from pydantic import BaseModel, ConfigDict, Field 
 
 from mlops_fraud.features import build_features
+
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 # ---------- Logging ----------
 LOG = logging.getLogger("uvicorn")
@@ -35,9 +41,57 @@ mlflow.set_tracking_uri(TRACKING)
 client = MlflowClient()
 app = FastAPI(title="Fraud XGB Inference", version="1.0")
 
+# ---------- Validation Errors (422) ----------
+@app.exception_handler(RequestValidationError)
+async def _validation_handler(request: Request, exc: RequestValidationError):
+    detail = [{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
+    return JSONResponse(status_code=422, content={"error": "Invalid request", "detail": detail})
+
+# ---------- Metrics ----------
+REQ_COUNT = Counter("api_requests_total", "Total API requests", ["method", "path", "status"])
+REQ_LATENCY = Histogram(
+    "api_request_latency_seconds", "Request latency (seconds)",
+    ["method", "path", "status"],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5],
+)
+
+@app.middleware("http")
+async def _metrics_middleware(request: Request, call_next):
+    t0 = time.perf_counter()
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        dt = time.perf_counter() - t0
+        method = request.method
+        path = getattr(request.scope.get("route"), "path", request.url.path)
+        status = str(getattr(locals().get("response", None), "status_code", 500))
+        REQ_COUNT.labels(method, path, status).inc()
+        REQ_LATENCY.labels(method, path, status).observe(dt)
+        # grep-friendly timing line
+        LOG.info(f"{method} {path} -> {status} {dt:.4f}s")
+
+@app.get("/metrics")
+def metrics():
+    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 # ---------- Schemas ----------
+class Transaction(BaseModel):
+    model_config = ConfigDict(extra="forbid")  # reject unknown keys
+
+    type: Literal["PAYMENT", "TRANSFER", "CASH_OUT", "DEBIT", "CASH_IN"]
+    amount: float = Field(gt=0)
+    step: int = Field(ge=0)
+    oldbalanceOrg: float
+    newbalanceOrig: float
+    oldbalanceDest: float
+    newbalanceDest: float
+    isFlaggedFraud: int = Field(ge=0, le=1, default=0)
+
 class PredictRequest(BaseModel):
-    rows: List[Dict[str, Any]] = Field(..., min_length=1, description="List of input rows")
+    model_config = ConfigDict(extra="forbid")
+    rows: List[Transaction] = Field(..., min_length=1, description="List of input rows")
 
 class PredictResponse(BaseModel):
     scores: List[float]
@@ -292,7 +346,10 @@ def predict(req: PredictRequest):
         if not (_model_xgb or _model_pyfunc):
             raise HTTPException(status_code=503, detail="Model not ready")
 
-        df = pd.DataFrame(req.rows)
+        # Pydantic already validated + forbade unknown keys
+        df = pd.DataFrame([r.model_dump() for r in req.rows])
+
+        # (Optional) keep this guard if you want belt-and-suspenders
         missing = [c for c in REQUIRED_MIN_COLS if c not in df.columns]
         if missing:
             raise HTTPException(status_code=400, detail=f"Missing required columns: {missing}")
