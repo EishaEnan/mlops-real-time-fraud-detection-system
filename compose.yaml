@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   # --- PostgreSQL ---
   postgres:
@@ -13,8 +15,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
-  # --- MinIO (S3-compatible) ---
+  # --- MinIO (S3-compatible, optional) ---
   minio:
     image: minio/minio:latest
     ports:
@@ -30,8 +33,9 @@ services:
       timeout: 10s
       retries: 20
     profiles: ["dev"]
+    restart: unless-stopped
 
-  # Create bucket if missing
+  # Create bucket if missing (dev only)
   minio-create-bucket:
     image: minio/mc
     depends_on:
@@ -43,6 +47,7 @@ services:
       mc ls minio/mlops-fraud-dvc || mc mb minio/mlops-fraud-dvc
       "
     profiles: ["dev"]
+    restart: "no"
 
   # --- MLflow Tracking Server ---
   mlflow:
@@ -55,21 +60,62 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      # For MinIO dev profile, also depend on these:
       # minio:
       #   condition: service_healthy
       # minio-create-bucket:
       #   condition: service_completed_successfully
     ports:
       - "5500:5000"   # host:container
+    env_file: [.env]
     environment:
+      # For AWS S3 (recommended): leave endpoint UNSET.
+      # For MinIO dev: uncomment next line in your .env or here
       # MLFLOW_S3_ENDPOINT_URL: http://minio:9000
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
-      # MLFLOW_ENABLE_SYSTEM_METRICS: "true"
+      AWS_REGION: ${AWS_REGION}
+      ARTIFACTS_URI: ${ARTIFACTS_URI}        # e.g. s3://mlops-fraud-dvc  (no trailing slash)
     command: >
       mlflow server
         --host 0.0.0.0 --port 5000
         --backend-store-uri postgresql+psycopg2://user:password@postgres:5432/mlflowdb
         --artifacts-destination ${ARTIFACTS_URI}
         --serve-artifacts
+    healthcheck:
+      test: ["CMD-SHELL","bash -lc \":> /dev/tcp/127.0.0.1/5000\""]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # --- FastAPI Inference API ---
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    env_file: [.env]
+    environment:
+      # Internal MLflow URL (not host port 5500)
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODEL_NAME: ${MODEL_NAME:-fraud_xgb}
+      MODEL_ALIAS: ${MODEL_ALIAS:-staging}
+      MODEL_REFRESH_SECS: ${MODEL_REFRESH_SECS:-120}
+      ARTIFACTS_URI: ${ARTIFACTS_URI}        # used by direct-S3 loader in api.py
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      AWS_REGION: ${AWS_REGION}
+      SKIP_REGISTRY_RESOLVER: "1"          # always go direct to S3
+      MLFLOW_HTTP_REQUEST_TIMEOUT: "5"     # keep small anyway
+      MODEL_READY_TIMEOUT_SECS: "8"
+    restart: unless-stopped
+    # mount optional debug scripts (comment out if not needed)
+    volumes:
+      - ./scripts:/app/scripts:ro

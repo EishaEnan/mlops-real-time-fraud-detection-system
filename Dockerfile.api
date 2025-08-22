@@ -1,0 +1,19 @@
+# Dockerfile.api
+FROM python:3.11-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY src /app/src
+
+RUN pip install --no-cache-dir \
+    mlflow==3.1.4 fastapi uvicorn[standard] pandas numpy scikit-learn xgboost pydantic boto3
+
+ENV PYTHONPATH=/app/src
+ENV MLFLOW_TRACKING_URI=http://mlflow:5000
+ENV MODEL_NAME=fraud_xgb
+ENV MODEL_ALIAS=staging
+ENV MODEL_REFRESH_SECS=120
+ENV MLFLOW_HTTP_REQUEST_TIMEOUT=30
+
+CMD ["uvicorn", "mlops_fraud.deployment.api:app", "--host", "0.0.0.0", "--port", "8080"]
