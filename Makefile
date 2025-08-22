@@ -11,7 +11,7 @@ PYTHON := $(if $(wildcard venv/bin/python),venv/bin/python,$(shell command -v py
 export MLFLOW_TRACKING_URI ?= $(MLFLOW_HOST_URI)
 
 # ===== Targets =====
-.PHONY: help mlflow-up train eval promote api-up smoke-api check-python
+.PHONY: help mlflow-up train eval promote api-up smoke-api check-python check-mlflow-version
 
 help:
 	@echo "Available commands:"
@@ -47,3 +47,11 @@ api-up:
 
 smoke-api:
 	$(PYTHON) scripts/smoke_api.py
+
+check-mlflow-version:
+	@echo "Host:"; \
+	$(PYTHON) -c 'import mlflow; print(mlflow.__version__)'
+	@echo "API container:"; \
+	docker compose run --rm api python -c 'import mlflow; print(mlflow.__version__)'
+	@echo "MLflow server:"; \
+	docker compose exec mlflow python -c 'import mlflow; print(mlflow.__version__)' || docker compose exec mlflow mlflow --version
