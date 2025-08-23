@@ -10,6 +10,14 @@ PYTHON := $(if $(wildcard venv/bin/python),venv/bin/python,$(shell command -v py
 # Default to host MLflow unless overridden
 export MLFLOW_TRACKING_URI ?= $(MLFLOW_HOST_URI)
 
+# --- Experiment hygiene (standardized) ---
+MLFLOW_EXPERIMENT ?= fraud_train
+ARTIFACTS_URI ?= s3://mlops-fraud-dvc    # override via env/.env if needed
+EXP_ARTIFACT_DIR ?= fraud_train
+
+# Default API base for smoke tests
+API_DEFAULT ?= http://localhost:8080
+
 # ===== Targets =====
 .PHONY: help mlflow-up train eval promote api-up smoke-api check-python check-mlflow-version
 
@@ -21,6 +29,8 @@ help:
 	@echo "  make promote       - Promote best model to 'Staging'"
 	@echo "  make api-up        - Start FastAPI service (http://localhost:8000)"
 	@echo "  make smoke-api     - Verify /healthz"
+	@echo "  Env: MLFLOW_EXPERIMENT=$(MLFLOW_EXPERIMENT), ARTIFACTS_URI=$(ARTIFACTS_URI), EXP_ARTIFACT_DIR=$(EXP_ARTIFACT_DIR)"
+
 
 check-python:
 	@test -n "$(PYTHON)" || (echo "No python found. Create venv or install python3." && exit 1)
@@ -31,10 +41,16 @@ mlflow-up:
 
 train: check-python
 	MLFLOW_TRACKING_URI=$(MLFLOW_TRACKING_URI) \
+	MLFLOW_EXPERIMENT=$(MLFLOW_EXPERIMENT) \
+	ARTIFACTS_URI=$(ARTIFACTS_URI) \
+	EXP_ARTIFACT_DIR=$(EXP_ARTIFACT_DIR) \
 	$(PYTHON) training/pipelines/train_xgb.py
 
 eval: check-python
 	MLFLOW_TRACKING_URI=$(MLFLOW_TRACKING_URI) \
+	MLFLOW_EXPERIMENT=$(MLFLOW_EXPERIMENT) \
+	ARTIFACTS_URI=$(ARTIFACTS_URI) \
+	EXP_ARTIFACT_DIR=$(EXP_ARTIFACT_DIR) \
 	$(PYTHON) training/pipelines/evaluate.py
 
 promote: check-python
@@ -43,7 +59,7 @@ promote: check-python
 
 api-up:
 	docker compose up -d api
-	@echo ">>> API running at http://localhost:8000/healthz"
+	@echo ">>> API running at http://localhost:8080/healthz"
 
 smoke-api:
 	$(PYTHON) scripts/smoke_api.py
