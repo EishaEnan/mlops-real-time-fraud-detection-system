@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 # ---- Config (match search_xgb.py) ----
 TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
-EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_tuning_v2")   # same default as search
+EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_hyperopt_search")   # to keep the search runs separate
 ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", EXP_NAME)
 

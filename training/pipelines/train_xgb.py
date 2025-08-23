@@ -1,6 +1,6 @@
 # training/pipelines/train_xgb.py
 from __future__ import annotations
-import os, json, sys, logging
+import os, json, sys, logging, hashlib, pathlib
 import pandas as pd
 import mlflow
 import xgboost as xgb
@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 # ---- Config (env) ----
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
 EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_train")          # experiment name
-EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", EXP_NAME)        # subfolder under artifacts/
+EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", "fraud_train")        # subfolder under artifacts/
+ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 MODEL_NAME = os.getenv("MODEL_NAME", "fraud_xgb")
 TRAIN_PATH = os.getenv("TRAIN_PATH", "data/processed/train.csv")
 VALID_PATH = os.getenv("VALID_PATH", "data/processed/valid.csv")
@@ -27,19 +28,24 @@ RUN_NAME = os.getenv("RUN_NAME", "xgb_final")
 LABEL = os.getenv("LABEL_COL", "isFraud")                        # ensure it matches your data
 BEST_PARAMS_JSON = os.getenv("BEST_PARAMS_JSON", "best_xgb_params.json")
 
-def _ensure_experiment(name: str) -> str:
+def _ensure_experiment(name: str, artifacts_uri: str, subdir: str) -> str:
     """
-    Create the experiment with an artifact root routed via the MLflow artifact proxy:
-      mlflow-artifacts:/artifacts/<EXP_ARTIFACT_DIR>
-    The tracking server maps this to your S3 bucket/prefix (ARTIFACTS_URI).
+    Ensure experiment exists with a stable artifact root:
+      - If ARTIFACTS_URI is set:   s3://.../artifacts/<subdir>
+      - Else (fallback/proxy):     mlflow-artifacts:/artifacts/<subdir>
     """
     client = MlflowClient()
     exp = client.get_experiment_by_name(name)
-    if exp:
-        return exp.experiment_id
-    artifact_location = f"mlflow-artifacts:/artifacts/{EXP_ARTIFACT_DIR}"
-    return client.create_experiment(name, artifact_location=artifact_location)
+    desired = (f"{artifacts_uri}/artifacts/{subdir}" if artifacts_uri
+               else f"mlflow-artifacts:/artifacts/{subdir}")
+    if exp is None:
+        return client.create_experiment(name, artifact_location=desired)
+    if exp.artifact_location != desired:
+        logger.warning("Experiment '%s' artifact_location=%s != desired=%s",
+                       name, exp.artifact_location, desired)
+    return exp.experiment_id
 
+# ---- Data loading and feature preparation ----
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     if TrainingSchema is not None and LABEL in df.columns:
@@ -49,11 +55,18 @@ def load_csv(path: str) -> pd.DataFrame:
             logger.warning(f"schema validation failed for {path}: {e}")
     return df
 
+def _sha256_file(p: str) -> str:
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
 def main():
     # ---- Wire MLflow ----
     logger.info(f"Setting MLflow tracking URI: {MLFLOW_TRACKING_URI}")
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    exp_id = _ensure_experiment(EXP_NAME)
+    exp_id = _ensure_experiment(EXP_NAME, ARTIFACTS_URI, EXP_ARTIFACT_DIR)
     mlflow.set_experiment(EXP_NAME)
 
     # ---- Data ----
@@ -113,6 +126,51 @@ def main():
         # artifacts: feature order + metrics blob
         mlflow.log_text(json.dumps(feature_order), "feature_order.json")
         mlflow.log_dict({"pr_auc": pr_auc, "roc_auc": roc}, "metrics.json")
+
+        # Build model card
+        ds_path = "data/processed/paysim_features.csv"  
+        dataset_hash = _sha256_file(ds_path) if os.path.exists(ds_path) else "n/a"
+
+        # --- Model card (Markdown) ---
+        run_id = mlflow.active_run().info.run_id
+        feature_list = list(feature_order)
+
+        card_lines = [
+            f"# Model Card: {MODEL_NAME}",
+            "",
+            "## Summary",
+            f"- **Run ID:** `{run_id}`",
+            f"- **Experiment:** `{EXP_NAME}`",
+            f"- **Artifact Subdir:** `{EXP_ARTIFACT_DIR}`",
+            f"- **Train file:** `{TRAIN_PATH}`",
+            f"- **Valid file:** `{VALID_PATH}`",
+            f"- **Dataset hash (SHA256):** `{dataset_hash}`",
+            f"- **Feature count:** {len(feature_list)}",
+            f"- **Key metrics:** PR_AUC={pr_auc:.6f}, ROC_AUC={roc:.6f}",
+            "",
+            "## Params",
+            "```json",
+            json.dumps(params, indent=2),
+            "```",
+            "",
+            "## Features",
+            "```json",
+            json.dumps(feature_list, indent=2),
+            "```",
+        ]
+        card = "\n".join(card_lines)
+
+        # Store alongside other run artifacts
+        mlflow.log_text(card, "model_card.md")
+
+        # Tag the run with discoverable pointers
+        mlflow.set_tags({
+            "model_card": "model_card.md",
+            "model_card_uri": mlflow.get_artifact_uri("model_card.md"),
+            "dataset_hash": dataset_hash,
+            "feature_count": str(len(feature_list)),
+            "exp_artifact_dir": EXP_ARTIFACT_DIR,
+        })
 
     print(f"[done] PR-AUC={pr_auc:.4f} ROC-AUC={roc:.4f}")
 
