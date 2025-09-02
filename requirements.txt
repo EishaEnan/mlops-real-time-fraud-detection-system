@@ -8,7 +8,7 @@ hyperopt	# Distributed hyperparameter turing (works with MLflow)
 
 # === Experiment Tracking ===
 mlflow		# Track and compare model runs, params, metrics
-psycopg2-binary  # PostgreSQL driver for MLflow tracking server
+psycopg2-binary==2.9.9  # PostgreSQL driver for MLflow tracking server
 # === AWS Integration ===
 boto3                   # Required for AWS S3 access (used by DVC and MLflow)
 awscli                  # AWS CLI for S3 config & DVC remote access
@@ -35,6 +35,10 @@ python-multipart	# Recwuired for file uploads via FastAPI
 # === Jupyter + Kernel Support ===
 ipykernel               # Register virtualenv as notebook kernel
 jupyterlab              # For running and editing notebooks
+
+# === Dev / CI ===
+pytest          # Unit testing
+ruff            # Linting
 
 # === Optional / Future Add-ons ===
 # streamlit	# Interactive dashboards
