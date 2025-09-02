@@ -1,0 +1,28 @@
+# Dockerfile.airflow — robust & fast build for training/orchestration
+FROM apache/airflow:2.9.3-python3.11
+
+# --- OS packages (git for DVC; build tools just in case a wheel is missing) ---
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git build-essential gcc && \
+    rm -rf /var/lib/apt/lists/*
+USER airflow
+
+# --- Make pip tooling sane before heavy installs (avoid the posixpath/walk issue) ---
+RUN pip install --no-cache-dir --upgrade \
+      "pip<25" "setuptools<75" "wheel>=0.42"
+
+# --- (Optional) install your project requirements first if you have any shared deps there ---
+# COPY requirements.txt /tmp/requirements.txt
+# RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# --- Training stack (no Airflow constraints!) ---
+# Pick versions known to have manylinux wheels (no compiles)
+RUN pip install --no-cache-dir \
+      "dvc[s3]==3.55.1" \
+      "mlflow==2.14.3" \
+      "xgboost==2.0.3" \
+      "scikit-learn==1.4.2" \
+      "hyperopt==0.2.7"
+
+WORKDIR /opt/airflow
