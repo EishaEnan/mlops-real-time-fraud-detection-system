@@ -118,3 +118,86 @@ services:
     # mount optional debug scripts (comment out if not needed)
     volumes:
       - ./scripts:/app/scripts:ro
+
+  # --- Airflow --- (add this section)
+  # See https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
+  # We'll use a simplified version without Celery for local runs.
+
+  # Airflow DB (separate from MLflow's)
+  airflow-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports: ["5433:5432"]  # Use host 5433 to avoid conflict
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Airflow services need a UID to avoid permission errors when writing logs.
+  # Your local UID is used here. If you run `id -u` in your terminal, it should match.
+  # On Docker Desktop for Mac/Windows, this is often not an issue, but it's good practice.
+  airflow-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+    user: "${AIRFLOW_UID:-50001}:0"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/airflow/dags
+    volumes:
+      - .:/opt/project:rw  # Mount your whole project
+    entrypoint: /bin/bash
+    command: -c "airflow db init && airflow users create --username admin --password admin --firstname Anonymous --lastname User --role Admin --email admin@example.com"
+    restart: on-failure
+
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_healthy
+    user: "${AIRFLOW_UID:-50001}:0"
+    ports:
+      - "8888:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/airflow/dags
+    volumes:
+      - .:/opt/project:rw
+    command: airflow webserver
+    restart: unless-stopped
+
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_healthy
+    user: "${AIRFLOW_UID:-50001}:0"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/airflow/dags
+    volumes:
+      - .:/opt/project:rw
+    command: airflow scheduler
+    restart: unless-stopped
