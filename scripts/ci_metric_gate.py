@@ -37,9 +37,7 @@ def _fetch_from_mlflow(model_name: str, alias: str, artifact_path: str) -> dict:
     try:
         mv = client.get_model_version_by_alias(model_name, alias)
     except Exception as e:
-        raise SystemExit(
-            f"[metric-gate] ERROR: cannot resolve model {model_name!r} with alias {alias!r}: {e}"
-        ) from e
+        raise SystemExit(f"[metric-gate] ERROR: cannot resolve model {model_name!r} with alias {alias!r}: {e}") from e
 
     run_id = mv.run_id
     tmp = tempfile.mkdtemp(prefix="metric_gate_")
@@ -80,8 +78,7 @@ def main() -> int:
         model_name = args.model_name or os.getenv("MODEL_NAME")
         if not model_name:
             print(
-                "[metric-gate] File not found and no model provided. "
-                "Supply --model-name or set MODEL_NAME.",
+                "[metric-gate] File not found and no model provided. Supply --model-name or set MODEL_NAME.",
                 file=sys.stderr,
             )
             return 2
