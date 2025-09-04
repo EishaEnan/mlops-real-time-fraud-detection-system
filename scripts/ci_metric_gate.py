@@ -4,9 +4,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 import sys
 import tempfile
-from pathlib import Path
 
 
 def _load_json(p: Path) -> dict:
