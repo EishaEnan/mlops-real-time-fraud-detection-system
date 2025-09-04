@@ -8,40 +8,42 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-22.04
-    timeout-minutes: 30     # avoid infinite queues
-
-    defaults:
-      run:
-        shell: bash
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
+      - name: Set up Python 3.13 (with pip cache)
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            pyproject.toml
+
+      - name: Upgrade tools
+        run: |
+          python -m pip install --upgrade "pip<25" "setuptools<75" wheel
 
       - name: Install deps (project + dev)
         run: |
-          python -m pip install --upgrade "pip<25" "setuptools<75" wheel
           pip install -r requirements.txt
           pip install pytest ruff
 
       - name: Lint (ruff)
         run: |
           ruff --version
-          ruff check .
+          ruff check --fix .
+          ruff format --check .
 
       - name: Run unit tests
         env:
           PYTHONPATH: ./src
-        run: |
-          pytest -q
+        run: pytest -q
 
-      - name: MLflow smoke (local sqlite + local artifacts)
+      - name: MLflow smoke (sqlite + local artifacts)
         env:
           PYTHONPATH: ./src
         run: |
@@ -55,10 +57,8 @@ jobs:
               mlflow.log_metric("ping", 1.0)
               mlflow.set_tag("component", "ci")
           from mlflow.tracking import MlflowClient
-          exps = MlflowClient().search_experiments()
-          assert any(e.name=="ci_smoke" for e in exps)
+          assert any(e.name=="ci_smoke" for e in MlflowClient().search_experiments())
           PY
 
       - name: Metric gate (fail if pr_auc < threshold)
-        run: |
-          python scripts/ci_metric_gate.py --file eval_snapshot.json --metric pr_auc --threshold 0.90
+        run: python scripts/ci_metric_gate.py --file eval_snapshot.json --metric pr_auc --threshold 0.90
