@@ -1,44 +1,42 @@
 # === Core ML & Data ===
-pandas		# Tabular data processing
-scikit-learn	# Classical ML models and preprocessing
-xgboost		# Gradient boosting machine
+pandas==2.3.2
+scikit-learn==1.7.1          # first line with official cp313 wheels
+xgboost==3.0.4
 
-# === Hyper Optimization ===
-hyperopt	# Distributed hyperparameter turing (works with MLflow)
+# === Hyperparameter Optimization ===
+hyperopt==0.2.7
 
-# === Experiment Tracking ===
-mlflow		# Track and compare model runs, params, metrics
-psycopg2-binary==2.9.9  # PostgreSQL driver for MLflow tracking server
+# === Experiment Tracking (client) ===
+mlflow==3.1.4                 # aligns with your Docker MLflow; works on py3.13
+psycopg2-binary>=2.9.10       # 2.9.10+ has macOS/py3.13 wheels
+
 # === AWS Integration ===
-boto3                   # Required for AWS S3 access (used by DVC and MLflow)
-awscli                  # AWS CLI for S3 config & DVC remote access
+boto3==1.34.162
+awscli>=1.33.0
 
 # === Data Version Control ===
-dvc[s3]                 # Data and model versioning with S3 support
-
-# === Workflow Orchestration ===
-apache-airflow	# DAG-based orchestration
+dvc[s3]==3.55.1
 
 # === Serving (FastAPI backend) ===
-fastapi		# API for model inference
-uvicorn		# ASGI server to run FastAPI
-prometheus-client   # Expose API metrics (/metrics) for Prometheus scraping
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+prometheus-client==0.20.0
+python-multipart==0.0.12
 
-# === Visualization ===
-matplotlib	# Basic plots
-seaborn     # Quick statistical plots (count, box, heatmap)
-shap		# Model explainability (SHAP values)
-
-# === File Upload Support ===
-python-multipart	# Recwuired for file uploads via FastAPI
+# === Visualization / Notebooks (optional locally) ===
+matplotlib>=3.9.0
+seaborn>=0.13.2
+# NOTE: SHAP wheels for py3.13 can lag; install only if needed:
+# shap>=0.46.0
 
 # === Jupyter + Kernel Support ===
-ipykernel               # Register virtualenv as notebook kernel
-jupyterlab              # For running and editing notebooks
+ipykernel>=6.29.0
+jupyterlab>=4.2.5
 
 # === Dev / CI ===
-pytest          # Unit testing
-ruff            # Linting
+pytest>=8.3.0
+ruff>=0.5.6
+
 
 # === Optional / Future Add-ons ===
 # streamlit	# Interactive dashboards
