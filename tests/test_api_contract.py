@@ -1,5 +1,6 @@
 #tests/test_api_contract.py
 from fastapi.testclient import TestClient
+
 from mlops_fraud.deployment.api import app
 
 client = TestClient(app)

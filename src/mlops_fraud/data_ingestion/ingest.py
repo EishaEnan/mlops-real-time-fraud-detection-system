@@ -1,7 +1,8 @@
 # src/data_ingestion/ingest.py
 
-import pandas as pd
 import os
+
+import pandas as pd
 
 RAW_DATA_PATH = "data/raw/paysim.csv"
 PROCESSED_DATA_PATH = "data/processed/paysim_clean.csv"

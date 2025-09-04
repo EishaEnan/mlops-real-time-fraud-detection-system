@@ -1,25 +1,30 @@
 #src/mlops_fraud/deployment/api.py
 # --- imports ---
 from __future__ import annotations
-import os, json, time, logging, threading, shutil, tempfile
-from typing import List, Dict, Any, Optional, Tuple, Literal
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+import json
+import logging
+import os
+import shutil
+import tempfile
+import threading
+import time
+from typing import Literal
+
+import boto3
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, PlainTextResponse
+import mlflow
+from mlflow import xgboost as mlf_xgb
+from mlflow.tracking import MlflowClient
 import numpy as np
 import pandas as pd
-import boto3
-import mlflow
-from mlflow.tracking import MlflowClient
-from mlflow import xgboost as mlf_xgb
-
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
-from fastapi.exceptions import RequestValidationError
-from pydantic import BaseModel, ConfigDict, Field 
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from pydantic import BaseModel, ConfigDict, Field
 
 from mlops_fraud.features import build_features
-
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 # ---------- Logging ----------
 LOG = logging.getLogger("uvicorn")
@@ -91,20 +96,20 @@ class Transaction(BaseModel):
 
 class PredictRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    rows: List[Transaction] = Field(..., min_length=1, description="List of input rows")
+    rows: list[Transaction] = Field(..., min_length=1, description="List of input rows")
 
 class PredictResponse(BaseModel):
-    scores: List[float]
+    scores: list[float]
     n: int
     model_ref: str
 
 # ---------- Globals ----------
 _model_xgb = None
 _model_pyfunc = None
-_feature_order: Optional[list] = None
+_feature_order: list | None = None
 _last_loaded_ts = 0.0
 _last_source = ""
-_artifacts_dir: Optional[str] = None  # persistent temp folder for loaded model
+_artifacts_dir: str | None = None  # persistent temp folder for loaded model
 _lock = threading.RLock()
 
 REQUIRED_MIN_COLS = [
@@ -114,7 +119,7 @@ REQUIRED_MIN_COLS = [
 ]
 
 # ---------- Helpers ----------
-def _resolve_model_uri_and_runid() -> Tuple[str, Optional[str], str]:
+def _resolve_model_uri_and_runid() -> tuple[str, str | None, str]:
     """
     Returns (models:/name/version, run_id, version_str).
     Always resolves to a numeric version (never alias/stage in the URI).
@@ -212,13 +217,13 @@ def _prepare_clean_dir() -> str:
     _artifacts_dir = tempfile.mkdtemp(prefix="model_artifacts_")
     return _artifacts_dir
 
-def _download_feature_order(run_id: str) -> Optional[list]:
+def _download_feature_order(run_id: str) -> list | None:
     if not run_id:
         return None
     try:
         with tempfile.TemporaryDirectory() as td:
             p = mlflow.artifacts.download_artifacts(f"runs:/{run_id}/feature_order.json", dst_path=td)
-            with open(p, "r") as f:
+            with open(p) as f:
                 return json.load(f)
     except Exception as e:
         LOG.warning(f"No feature_order.json (run={run_id}): {e}")

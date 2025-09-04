@@ -1,5 +1,7 @@
 # scripts/smoke_load.py
-import os, tempfile, json
+import os
+import tempfile
+
 import mlflow
 from mlflow.tracking import MlflowClient
 

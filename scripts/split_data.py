@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 from pathlib import Path
+
 import pandas as pd
-import numpy as np
+
 
 def split_time(df, label_col, step_col, train, valid, test, seed=42, shuffle_within=False):
     df = df.sort_values(step_col).reset_index(drop=True)

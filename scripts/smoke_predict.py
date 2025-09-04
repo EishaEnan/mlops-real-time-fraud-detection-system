@@ -1,9 +1,12 @@
-import os, json, tempfile
-import pandas as pd
-import numpy as np
+import json
+import os
+import tempfile
+
+import boto3
 import mlflow
 from mlflow.tracking import MlflowClient
-import boto3
+import numpy as np
+import pandas as pd
 
 # ----- Config from env -----
 TRACKING   = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
@@ -75,7 +78,7 @@ with tempfile.TemporaryDirectory() as td:
     feature_order = None
     try:
         p = mlflow.artifacts.download_artifacts(f"runs:/{mv.run_id}/feature_order.json", dst_path=td)
-        with open(p, "r") as f:
+        with open(p) as f:
             feature_order = json.load(f)
         print(f"Loaded feature_order.json with {len(feature_order)} columns")
     except Exception as e:

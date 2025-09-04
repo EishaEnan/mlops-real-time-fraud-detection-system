@@ -1,6 +1,8 @@
 # airflow/dags/fraud_train_daily.py
 from __future__ import annotations
+
 import pendulum
+
 from airflow.models.dag import DAG
 from airflow.operators.bash import BashOperator
 

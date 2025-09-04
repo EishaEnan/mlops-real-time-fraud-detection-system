@@ -1,12 +1,16 @@
 # training/hyperopt/smoke_mlflow.py
 from __future__ import annotations
-import os, json, mlflow
+
+import json
+import os
+import random
+
+import mlflow
 from mlflow.tracking import MlflowClient
 from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import random
+from sklearn.model_selection import train_test_split
 
 TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
 EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "smoke_fast")

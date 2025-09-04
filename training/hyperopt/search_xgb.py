@@ -1,12 +1,20 @@
 # training/pipelines/train_xgb.py
 from __future__ import annotations
-import os, json, sys, logging
-import pandas as pd
-import mlflow, xgboost as xgb
-from sklearn.metrics import average_precision_score, roc_auc_score
+
+import json
+import logging
+import os
+import sys
+
+import mlflow
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
-from mlops_fraud.features import prepare_training, build_features
+import pandas as pd
+from sklearn.metrics import average_precision_score, roc_auc_score
+import xgboost as xgb
+
+from mlops_fraud.features import build_features, prepare_training
+
 try:
     from mlops_fraud.schemas import TrainingSchema
 except Exception:
@@ -110,6 +118,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
+    except Exception:
         import traceback; traceback.print_exc()
         sys.exit(1)

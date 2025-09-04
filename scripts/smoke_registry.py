@@ -1,7 +1,9 @@
-import os, tempfile, re
+import os
+import tempfile
+
+import boto3
 import mlflow
 from mlflow.tracking import MlflowClient
-import boto3
 
 BUCKET_ROOT = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 assert BUCKET_ROOT.startswith("s3://"), "ARTIFACTS_URI must be s3://... (no trailing slash)"

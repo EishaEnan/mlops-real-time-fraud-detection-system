@@ -1,9 +1,12 @@
 # training/pipelines/evaluate.py
 from __future__ import annotations
-import os, json
-import pandas as pd
+
+import json
+import os
+
 import mlflow
-from sklearn.metrics import precision_recall_curve
+import pandas as pd
+
 from mlops_fraud.features import build_features
 
 LABEL = os.getenv("LABEL_COL", "isFraud")

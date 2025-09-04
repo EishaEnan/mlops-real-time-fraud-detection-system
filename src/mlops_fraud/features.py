@@ -1,8 +1,8 @@
 # common/features.py
 from __future__ import annotations
-import pandas as pd
+
 import numpy as np
-from typing import List, Tuple
+import pandas as pd
 
 # Canonical categories for 'type' (keeps OHE columns stable accross training runs)
 TYPE_CATS = ['CASH_IN', 'CASH_OUT', 'DEBIT', 'PAYMENT', 'TRANSFER']
@@ -90,7 +90,7 @@ def build_features(df: pd.DataFrame, *, for_inference: bool = False) -> pd.DataF
 
     return X
 
-def prepare_training(df: pd.DataFrame, label_col: str = LABEL_COL) -> Tuple[pd.DataFrame, pd.Series, List[str]]:
+def prepare_training(df: pd.DataFrame, label_col: str = LABEL_COL) -> tuple[pd.DataFrame, pd.Series, list[str]]:
     """
     Split label, build features, return (X, y, feature_order).
     Keep feature_order to enforce alignment at validation/inference time.

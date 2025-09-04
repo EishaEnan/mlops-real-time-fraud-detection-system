@@ -1,6 +1,9 @@
 # scripts/promote_best.py
 from __future__ import annotations
-import os, sys
+
+import os
+import sys
+
 import mlflow
 from mlflow.tracking import MlflowClient
 

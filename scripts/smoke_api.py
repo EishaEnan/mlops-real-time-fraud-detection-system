@@ -1,5 +1,6 @@
 # scripts/smoke_api.py
-import os, sys, time, json
+import json
+import os
 import urllib.request
 
 API = os.getenv("API_BASE", "http://localhost:8080")

@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 from __future__ import annotations
-import json
-import sys
+
 import argparse
+import json
 import os
+import sys
+
 
 def main():
     ap = argparse.ArgumentParser()

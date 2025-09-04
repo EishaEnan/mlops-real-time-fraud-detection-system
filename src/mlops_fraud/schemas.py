@@ -1,10 +1,12 @@
 # common/schemas.py
+from typing import Any
+
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+
 
 # -------- Pydantic (API request body) --------
 class TransactionRequest(BaseModel):
-    rows: List[Dict[str, Any]] = Field(..., description="List of raw feature rows (col->value)")
+    rows: list[dict[str, Any]] = Field(..., description="List of raw feature rows (col->value)")
 
 # -------- Pandera (optional: data checks in training/inference) --------
 try:
