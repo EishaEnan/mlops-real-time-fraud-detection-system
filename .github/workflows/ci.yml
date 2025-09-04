@@ -61,4 +61,20 @@ jobs:
           PY
 
       - name: Metric gate (fail if pr_auc < threshold)
-        run: python scripts/ci_metric_gate.py --file eval_snapshot.json --metric pr_auc --threshold 0.90
+        env:
+          # If the local file is absent, the script will use these to fetch from MLflow/S3.
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          MODEL_NAME: fraud_xgb
+          MODEL_ALIAS: staging
+          # EVAL_ARTIFACT: evaluations/eval_snapshot.json  # uncomment if you store it under a folder
+        run: |
+          # Try local, else fallback to registry -> run -> artifacts download.
+          python scripts/ci_metric_gate.py \
+            --file eval_snapshot.json \
+            --metric pr_auc \
+            --threshold 0.90 \
+            --model-name "$MODEL_NAME" \
+            --alias "$MODEL_ALIAS"
