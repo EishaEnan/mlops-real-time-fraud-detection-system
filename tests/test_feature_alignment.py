@@ -8,9 +8,15 @@ from mlops_fraud.features import build_features
 def _row(t):
     # Minimal raw row with required fields; label intentionally absent (inference mode)
     return {
-        "type": t, "amount": 123.0, "step": 1,
-        "nameOrig": "C1", "oldbalanceOrg": 1000.0, "newbalanceOrig": 900.0,
-        "nameDest": "M1", "oldbalanceDest": 500.0, "newbalanceDest": 600.0,
+        "type": t,
+        "amount": 123.0,
+        "step": 1,
+        "nameOrig": "C1",
+        "oldbalanceOrg": 1000.0,
+        "newbalanceOrig": 900.0,
+        "nameDest": "M1",
+        "oldbalanceDest": 500.0,
+        "newbalanceDest": 600.0,
         "isFlaggedFraud": 0,
     }
 
@@ -43,7 +49,7 @@ def test_feature_reindex_preserves_scores_on_permutation():
 
     # --- Simulate a scrambled inference payload ---
     perm = rng.permutation(feature_order)  # a shuffled column order
-    X_perm = X[perm]                       # mis-ordered features as they might arrive
+    X_perm = X[perm]  # mis-ordered features as they might arrive
 
     # Critical step: reindex back to the canonical training order
     X_fixed = X_perm.reindex(columns=feature_order, fill_value=0)

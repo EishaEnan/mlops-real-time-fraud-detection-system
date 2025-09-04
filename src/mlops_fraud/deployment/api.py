@@ -1,4 +1,4 @@
-#src/mlops_fraud/deployment/api.py
+# src/mlops_fraud/deployment/api.py
 # --- imports ---
 from __future__ import annotations
 
@@ -31,20 +31,21 @@ LOG = logging.getLogger("uvicorn")
 LOG.setLevel(logging.INFO)
 
 # ---------- Config ----------
-TRACKING       = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
-MODEL_NAME     = os.getenv("MODEL_NAME", "fraud_xgb")
-MODEL_ALIAS    = os.getenv("MODEL_ALIAS", "staging")
-MODEL_STAGE    = os.getenv("MODEL_STAGE", "")
-MODEL_VERSION  = os.getenv("MODEL_VERSION", "")
-REFRESH_SECS   = int(os.getenv("MODEL_REFRESH_SECS", "120"))
-READY_TIMEOUT  = int(os.getenv("MODEL_READY_TIMEOUT_SECS", "10"))
-HTTP_TIMEOUT   = int(os.getenv("MLFLOW_HTTP_REQUEST_TIMEOUT", "30"))
-ARTIFACTS_URI  = os.getenv("ARTIFACTS_URI", "").rstrip("/")  # e.g. s3://mlops-fraud-dvc
-AWS_REGION     = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
+TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
+MODEL_NAME = os.getenv("MODEL_NAME", "fraud_xgb")
+MODEL_ALIAS = os.getenv("MODEL_ALIAS", "staging")
+MODEL_STAGE = os.getenv("MODEL_STAGE", "")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "")
+REFRESH_SECS = int(os.getenv("MODEL_REFRESH_SECS", "120"))
+READY_TIMEOUT = int(os.getenv("MODEL_READY_TIMEOUT_SECS", "10"))
+HTTP_TIMEOUT = int(os.getenv("MLFLOW_HTTP_REQUEST_TIMEOUT", "30"))
+ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")  # e.g. s3://mlops-fraud-dvc
+AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
 
 mlflow.set_tracking_uri(TRACKING)
 client = MlflowClient()
 app = FastAPI(title="Fraud XGB Inference", version="1.0")
+
 
 # ---------- Validation Errors (422) ----------
 @app.exception_handler(RequestValidationError)
@@ -52,13 +53,16 @@ async def _validation_handler(request: Request, exc: RequestValidationError):
     detail = [{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
     return JSONResponse(status_code=422, content={"error": "Invalid request", "detail": detail})
 
+
 # ---------- Metrics ----------
 REQ_COUNT = Counter("api_requests_total", "Total API requests", ["method", "path", "status"])
 REQ_LATENCY = Histogram(
-    "api_request_latency_seconds", "Request latency (seconds)",
+    "api_request_latency_seconds",
+    "Request latency (seconds)",
     ["method", "path", "status"],
     buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5],
 )
+
 
 @app.middleware("http")
 async def _metrics_middleware(request: Request, call_next):
@@ -75,6 +79,7 @@ async def _metrics_middleware(request: Request, call_next):
         REQ_LATENCY.labels(method, path, status).observe(dt)
         # grep-friendly timing line
         LOG.info(f"{method} {path} -> {status} {dt:.4f}s")
+
 
 @app.get("/metrics")
 def metrics():
@@ -94,14 +99,17 @@ class Transaction(BaseModel):
     newbalanceDest: float
     isFlaggedFraud: int = Field(ge=0, le=1, default=0)
 
+
 class PredictRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     rows: list[Transaction] = Field(..., min_length=1, description="List of input rows")
+
 
 class PredictResponse(BaseModel):
     scores: list[float]
     n: int
     model_ref: str
+
 
 # ---------- Globals ----------
 _model_xgb = None
@@ -113,10 +121,15 @@ _artifacts_dir: str | None = None  # persistent temp folder for loaded model
 _lock = threading.RLock()
 
 REQUIRED_MIN_COLS = [
-    "type", "amount", "step",
-    "oldbalanceOrg", "newbalanceOrig",
-    "oldbalanceDest", "newbalanceDest",
+    "type",
+    "amount",
+    "step",
+    "oldbalanceOrg",
+    "newbalanceOrig",
+    "oldbalanceDest",
+    "newbalanceDest",
 ]
+
 
 # ---------- Helpers ----------
 def _resolve_model_uri_and_runid() -> tuple[str, str | None, str]:
@@ -161,10 +174,12 @@ def _resolve_model_uri_and_runid() -> tuple[str, str | None, str]:
     mv = max(mvs, key=lambda m: int(m.version))
     return f"models:/{MODEL_NAME}/{mv.version}", mv.run_id, str(mv.version)
 
+
 def _experiment_name_for_run(run_id: str) -> str:
     run = client.get_run(run_id)
     exp = client.get_experiment(run.info.experiment_id)
     return exp.name
+
 
 def _discover_registry_s3_dir(run_id: str) -> str:
     """
@@ -200,14 +215,18 @@ def _discover_registry_s3_dir(run_id: str) -> str:
 
     return "s3://" + bucket + "/" + newest_key.rsplit("/", 1)[0]  # .../artifacts
 
+
 def _download_models_uri_with_timeout(uri: str, dst_dir: str) -> str:
     """Download artifacts for models:/... into dst_dir with a timeout; returns dst_dir."""
+
     def _work():
         return mlflow.artifacts.download_artifacts(uri, dst_path=dst_dir)
+
     with ThreadPoolExecutor(max_workers=1) as ex:
         fut = ex.submit(_work)
         fut.result(timeout=HTTP_TIMEOUT)
     return dst_dir
+
 
 def _prepare_clean_dir() -> str:
     global _artifacts_dir
@@ -216,6 +235,7 @@ def _prepare_clean_dir() -> str:
         shutil.rmtree(_artifacts_dir, ignore_errors=True)
     _artifacts_dir = tempfile.mkdtemp(prefix="model_artifacts_")
     return _artifacts_dir
+
 
 def _download_feature_order(run_id: str) -> list | None:
     if not run_id:
@@ -228,6 +248,7 @@ def _download_feature_order(run_id: str) -> list | None:
     except Exception as e:
         LOG.warning(f"No feature_order.json (run={run_id}): {e}")
         return None
+
 
 # ---------- Loader ----------
 def _load_model(force: bool = False):
@@ -305,6 +326,7 @@ def _score(df: pd.DataFrame) -> pd.Series:
         y = y[:, 1]
     return pd.Series(y.ravel(), index=X.index)
 
+
 # ---------- Lifecycle ----------
 def _warmup():
     try:
@@ -312,9 +334,11 @@ def _warmup():
     except Exception as e:
         LOG.warning("Warmup load failed: %s", e)
 
+
 @app.on_event("startup")
 def startup():
     threading.Thread(target=_warmup, daemon=True).start()
+
 
 # ---------- Endpoints ----------
 @app.get("/healthz")
@@ -322,10 +346,12 @@ def healthz():
     status = "ready" if (_model_xgb or _model_pyfunc) else "starting"
     return {"status": status, "model_ref": _last_source, "last_loaded_ts": _last_loaded_ts}
 
+
 def _try_load_with_timeout(seconds: int):
     with ThreadPoolExecutor(max_workers=1) as ex:
         fut = ex.submit(_load_model, True)
         return fut.result(timeout=seconds)
+
 
 @app.get("/readyz")
 def readyz():
@@ -342,6 +368,7 @@ def readyz():
         return {"status": "loading-timeout", "model_ref": _last_source}
     except Exception as e:
         return {"status": "error", "detail": str(e), "model_ref": _last_source}
+
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
@@ -365,7 +392,8 @@ def predict(req: PredictRequest):
         raise
     except Exception as e:
         LOG.error("Prediction failed", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {e}") from e
+
 
 @app.post("/reload")
 def reload_model():

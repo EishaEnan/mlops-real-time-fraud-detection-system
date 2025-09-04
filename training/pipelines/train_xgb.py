@@ -26,15 +26,16 @@ logger = logging.getLogger(__name__)
 
 # ---- Config (env) ----
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
-EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_train")          # experiment name
-EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", "fraud_train")        # subfolder under artifacts/
+EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_train")  # experiment name
+EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", "fraud_train")  # subfolder under artifacts/
 ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 MODEL_NAME = os.getenv("MODEL_NAME", "fraud_xgb")
 TRAIN_PATH = os.getenv("TRAIN_PATH", "data/processed/train.csv")
 VALID_PATH = os.getenv("VALID_PATH", "data/processed/valid.csv")
 RUN_NAME = os.getenv("RUN_NAME", "xgb_final")
-LABEL = os.getenv("LABEL_COL", "isFraud")                        # ensure it matches your data
+LABEL = os.getenv("LABEL_COL", "isFraud")  # ensure it matches your data
 BEST_PARAMS_JSON = os.getenv("BEST_PARAMS_JSON", "best_xgb_params.json")
+
 
 def _ensure_experiment(name: str, artifacts_uri: str, subdir: str) -> str:
     """
@@ -44,14 +45,13 @@ def _ensure_experiment(name: str, artifacts_uri: str, subdir: str) -> str:
     """
     client = MlflowClient()
     exp = client.get_experiment_by_name(name)
-    desired = (f"{artifacts_uri}/artifacts/{subdir}" if artifacts_uri
-               else f"mlflow-artifacts:/artifacts/{subdir}")
+    desired = f"{artifacts_uri}/artifacts/{subdir}" if artifacts_uri else f"mlflow-artifacts:/artifacts/{subdir}"
     if exp is None:
         return client.create_experiment(name, artifact_location=desired)
     if exp.artifact_location != desired:
-        logger.warning("Experiment '%s' artifact_location=%s != desired=%s",
-                       name, exp.artifact_location, desired)
+        logger.warning("Experiment '%s' artifact_location=%s != desired=%s", name, exp.artifact_location, desired)
     return exp.experiment_id
+
 
 # ---- Data loading and feature preparation ----
 def load_csv(path: str) -> pd.DataFrame:
@@ -63,12 +63,14 @@ def load_csv(path: str) -> pd.DataFrame:
             logger.warning(f"schema validation failed for {path}: {e}")
     return df
 
+
 def _sha256_file(p: str) -> str:
     h = hashlib.sha256()
     with open(p, "rb") as f:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
 
 def main():
     # ---- Wire MLflow ----
@@ -89,10 +91,17 @@ def main():
     Xva = build_features(df_va.drop(columns=[LABEL]), for_inference=False).reindex(columns=feature_order, fill_value=0)
 
     # ---- Params (use best if present) ----
-    base_params = dict(
-        max_depth=6, learning_rate=0.1, subsample=0.8, colsample_bytree=0.8,
-        objective="binary:logistic", eval_metric="aucpr", n_estimators=400, tree_method="hist",
-    )
+    base_params = {
+        "max_depth": 6,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "objective": "binary:logistic",
+        "eval_metric": "aucpr",
+        "n_estimators": 400,
+        "tree_method": "hist",
+    }
+
     if os.path.exists(BEST_PARAMS_JSON):
         logger.info(f"Loading best params from {BEST_PARAMS_JSON}")
         with open(BEST_PARAMS_JSON) as f:
@@ -128,7 +137,7 @@ def main():
             xgb_model=clf,
             artifact_path="model",
             signature=sig,
-            registered_model_name=MODEL_NAME,   # optional: registers in Model Registry
+            registered_model_name=MODEL_NAME,  # optional: registers in Model Registry
         )
 
         # artifacts: feature order + metrics blob
@@ -136,7 +145,7 @@ def main():
         mlflow.log_dict({"pr_auc": pr_auc, "roc_auc": roc}, "metrics.json")
 
         # Build model card
-        ds_path = "data/processed/paysim_features.csv"  
+        ds_path = "data/processed/paysim_features.csv"
         dataset_hash = _sha256_file(ds_path) if os.path.exists(ds_path) else "n/a"
 
         # --- Model card (Markdown) ---
@@ -172,15 +181,18 @@ def main():
         mlflow.log_text(card, "model_card.md")
 
         # Tag the run with discoverable pointers
-        mlflow.set_tags({
-            "model_card": "model_card.md",
-            "model_card_uri": mlflow.get_artifact_uri("model_card.md"),
-            "dataset_hash": dataset_hash,
-            "feature_count": str(len(feature_list)),
-            "exp_artifact_dir": EXP_ARTIFACT_DIR,
-        })
+        mlflow.set_tags(
+            {
+                "model_card": "model_card.md",
+                "model_card_uri": mlflow.get_artifact_uri("model_card.md"),
+                "dataset_hash": dataset_hash,
+                "feature_count": str(len(feature_list)),
+                "exp_artifact_dir": EXP_ARTIFACT_DIR,
+            }
+        )
 
     print(f"[done] PR-AUC={pr_auc:.4f} ROC-AUC={roc:.4f}")
+
 
 if __name__ == "__main__":
     try:

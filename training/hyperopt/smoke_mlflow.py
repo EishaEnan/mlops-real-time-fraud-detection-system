@@ -17,6 +17,7 @@ EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "smoke_fast")
 ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", EXP_NAME)
 
+
 def ensure_experiment(name: str) -> str:
     client = MlflowClient()
     exp = client.get_experiment_by_name(name)
@@ -24,6 +25,7 @@ def ensure_experiment(name: str) -> str:
         return exp.experiment_id
     artifact_location = f"{ARTIFACTS_URI}/{EXP_ARTIFACT_DIR}" if ARTIFACTS_URI else None
     return client.create_experiment(name, artifact_location=artifact_location)
+
 
 def main():
     mlflow.set_tracking_uri(TRACKING)
@@ -60,6 +62,7 @@ def main():
 
     print(f"Run: {run_id}")
     print(f"UI:  {TRACKING}/#/experiments/{exp_id}/runs/{run_id}")
+
 
 if __name__ == "__main__":
     main()

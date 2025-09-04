@@ -10,9 +10,10 @@ from mlflow.tracking import MlflowClient
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
 EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_train")  # standardized
 MODEL_NAME = os.getenv("MODEL_NAME", "fraud_xgb")
-PRIMARY_METRIC = os.getenv("PRIMARY_METRIC", "pr_auc")               # matches training logs
-ALIAS = os.getenv("PROMOTE_ALIAS", "staging").lower()                # 'staging' | 'production'
+PRIMARY_METRIC = os.getenv("PRIMARY_METRIC", "pr_auc")  # matches training logs
+ALIAS = os.getenv("PROMOTE_ALIAS", "staging").lower()  # 'staging' | 'production'
 ARCHIVE_OLD = os.getenv("ARCHIVE_OLD", "false").lower() == "true"
+
 
 def main():
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -91,6 +92,7 @@ def main():
         print(f"[warn] could not link model card: {e}", file=sys.stderr)
 
     print(f"[ok] {MODEL_NAME} v{mv.version} <- run {run_id} ({metric_name}={metric_val:.4f}) alias={ALIAS}")
+
 
 if __name__ == "__main__":
     main()

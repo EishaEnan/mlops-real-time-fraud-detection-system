@@ -5,11 +5,12 @@ import numpy as np
 import pandas as pd
 
 # Canonical categories for 'type' (keeps OHE columns stable accross training runs)
-TYPE_CATS = ['CASH_IN', 'CASH_OUT', 'DEBIT', 'PAYMENT', 'TRANSFER']
-ID_COLS = ['nameOrig', 'nameDest']
-RAW_BAL_COLS = ['oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+TYPE_CATS = ["CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"]
+ID_COLS = ["nameOrig", "nameDest"]
+RAW_BAL_COLS = ["oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest"]
 LABEL_COL = "isFraud"
-_OHE_PREFIX = 'type_'
+_OHE_PREFIX = "type_"
+
 
 def _ohe_type(df: pd.DataFrame) -> pd.DataFrame:
     if "type" in df.columns:
@@ -66,7 +67,7 @@ def build_features(df: pd.DataFrame, *, for_inference: bool = False) -> pd.DataF
     # 6) Time features from step
     if "step" in X.columns:
         X["hour"] = X["step"] % 24
-        X["day"]  = X["step"] // 24
+        X["day"] = X["step"] // 24
 
     # 7) High-value flag
     if "amount" in X.columns:
@@ -74,8 +75,13 @@ def build_features(df: pd.DataFrame, *, for_inference: bool = False) -> pd.DataF
 
     # 8) Drop raw balances and redundant columns
     drop_cols = [
-        "oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest",
-        "amount", "errorOrig", "errorDest"
+        "oldbalanceOrg",
+        "newbalanceOrig",
+        "oldbalanceDest",
+        "newbalanceDest",
+        "amount",
+        "errorOrig",
+        "errorDest",
     ]
     X = X.drop(columns=[c for c in drop_cols if c in X.columns], errors="ignore")
 
@@ -89,6 +95,7 @@ def build_features(df: pd.DataFrame, *, for_inference: bool = False) -> pd.DataF
         X = X.drop(columns=[LABEL_COL])
 
     return X
+
 
 def prepare_training(df: pd.DataFrame, label_col: str = LABEL_COL) -> tuple[pd.DataFrame, pd.Series, list[str]]:
     """

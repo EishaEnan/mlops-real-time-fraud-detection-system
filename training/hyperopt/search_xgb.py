@@ -25,16 +25,17 @@ log = logging.getLogger(__name__)
 
 # ---- Config (match search_xgb.py) ----
 TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
-EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_hyperopt_search")   # to keep the search runs separate
+EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "fraud_hyperopt_search")  # to keep the search runs separate
 ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", EXP_NAME)
 
 MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "fraud_xgb")
 TRAIN_PATH = os.getenv("TRAIN_PATH", "data/processed/train.csv")
 VALID_PATH = os.getenv("VALID_PATH", "data/processed/valid.csv")
-RUN_NAME   = os.getenv("RUN_NAME", "xgb_final")
-LABEL      = os.getenv("LABEL_COL", "isFraud")  # ≤ keep consistent with search
+RUN_NAME = os.getenv("RUN_NAME", "xgb_final")
+LABEL = os.getenv("LABEL_COL", "isFraud")  # ≤ keep consistent with search
 BEST_PARAMS_JSON = os.getenv("BEST_PARAMS_JSON", "best_xgb_params.json")
+
 
 def _ensure_experiment(name: str) -> str:
     """Create experiment with S3 artifact root like s3://<bucket>/artifacts/<EXP_ARTIFACT_DIR>."""
@@ -45,6 +46,7 @@ def _ensure_experiment(name: str) -> str:
     artifact_location = f"{ARTIFACTS_URI}/{EXP_ARTIFACT_DIR}" if ARTIFACTS_URI else None
     return client.create_experiment(name, artifact_location=artifact_location)
 
+
 def _load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     if TrainingSchema is not None and LABEL in df.columns:
@@ -53,6 +55,7 @@ def _load_csv(path: str) -> pd.DataFrame:
         except Exception as e:
             log.warning(f"schema validation failed for {path}: {e}")
     return df
+
 
 def main():
     # ---- MLflow wiring ----
@@ -71,18 +74,24 @@ def main():
     Xva = build_features(df_va.drop(columns=[LABEL]), for_inference=False).reindex(columns=feature_order, fill_value=0)
 
     # ---- Params (use best if present) ----
-    params = dict(
-        max_depth=6, learning_rate=0.1, subsample=0.8, colsample_bytree=0.8,
-        objective="binary:logistic", eval_metric="aucpr",
-        n_estimators=400, tree_method="hist",
-    )
+    params = {
+        "max_depth": 6,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "objective": "binary:logistic",
+        "eval_metric": "aucpr",
+        "n_estimators": 400,
+        "tree_method": "hist",
+    }
     if os.path.exists(BEST_PARAMS_JSON):
         log.info(f"Loading best params from {BEST_PARAMS_JSON}")
         with open(BEST_PARAMS_JSON) as f:
             best = json.load(f)
         # coerce integer params
         for k in ("max_depth", "n_estimators"):
-            if k in best: best[k] = int(best[k])
+            if k in best:
+                best[k] = int(best[k])
         params.update(best)
 
     # ---- Train + log ----
@@ -96,7 +105,7 @@ def main():
 
         p = clf.predict_proba(Xva)[:, 1]
         pr_auc = float(average_precision_score(yva, p))
-        roc    = float(roc_auc_score(yva, p))
+        roc = float(roc_auc_score(yva, p))
         mlflow.log_metric("pr_auc", pr_auc)
         mlflow.log_metric("roc_auc", roc)
         log.info(f"PR AUC: {pr_auc:.4f} | ROC AUC: {roc:.4f}")
@@ -115,9 +124,12 @@ def main():
 
     print(f"[done] Run: {run_id} | PR-AUC={pr_auc:.4f} ROC-AUC={roc:.4f}")
 
+
 if __name__ == "__main__":
     try:
         main()
     except Exception:
-        import traceback; traceback.print_exc()
+        import traceback
+
+        traceback.print_exc()
         sys.exit(1)

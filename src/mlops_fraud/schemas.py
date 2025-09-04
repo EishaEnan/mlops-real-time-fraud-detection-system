@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class TransactionRequest(BaseModel):
     rows: list[dict[str, Any]] = Field(..., description="List of raw feature rows (col->value)")
 
+
 # -------- Pandera (optional: data checks in training/inference) --------
 try:
     import pandera as pa
