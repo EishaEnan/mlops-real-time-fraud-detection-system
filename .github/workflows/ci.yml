@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main, feat/** ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13 (with pip cache)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            pyproject.toml
+
+      - name: Upgrade tools
+        run: |
+          python -m pip install --upgrade "pip<25" "setuptools<75" wheel
+
+      - name: Install deps (project + dev)
+        run: |
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      - name: Lint (ruff)
+        run: |
+          ruff --version
+          ruff check --fix .
+          ruff format --check .
+
+      - name: Run unit tests
+        env:
+          PYTHONPATH: ./src
+        run: pytest -q
+
+      - name: MLflow smoke (sqlite + local artifacts)
+        env:
+          PYTHONPATH: ./src
+        run: |
+          python - <<'PY'
+          import mlflow, os, tempfile
+          tracking_dir = tempfile.mkdtemp(prefix="mlruns_ci_")
+          mlflow.set_tracking_uri("sqlite:///" + os.path.join(tracking_dir, "mlruns_ci.db"))
+          mlflow.set_experiment("ci_smoke")
+          with mlflow.start_run(run_name="smoke"):
+              mlflow.log_param("ci", "true")
+              mlflow.log_metric("ping", 1.0)
+              mlflow.set_tag("component", "ci")
+          from mlflow.tracking import MlflowClient
+          assert any(e.name=="ci_smoke" for e in MlflowClient().search_experiments())
+          PY
+

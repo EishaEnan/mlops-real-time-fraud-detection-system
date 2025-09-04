@@ -1,15 +1,19 @@
 # scripts/smoke_load.py
-import os, tempfile, json
+import os
+import tempfile
+
 import mlflow
 from mlflow.tracking import MlflowClient
 
-MODEL_NAME  = os.getenv("MODEL_NAME", "fraud_xgb")
-ALIAS       = os.getenv("MODEL_ALIAS", "staging")
-TRACKING    = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
-ART_ROOT    = os.getenv("ARTIFACTS_URI")  # e.g. s3://mlops-fraud-dvc  (no trailing slash)
+MODEL_NAME = os.getenv("MODEL_NAME", "fraud_xgb")
+ALIAS = os.getenv("MODEL_ALIAS", "staging")
+TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+ART_ROOT = os.getenv("ARTIFACTS_URI")  # e.g. s3://mlops-fraud-dvc  (no trailing slash)
 
-assert ART_ROOT and ART_ROOT.startswith("s3://"), \
+assert ART_ROOT and ART_ROOT.startswith("s3://"), (
     "Set ARTIFACTS_URI=s3://<bucket>[/optional-prefix] in env (ex: s3://mlops-fraud-dvc)"
+)
+
 
 def map_mlflow_artifacts_to_s3(artifacts_uri: str, artifacts_root: str) -> str:
     """
@@ -20,11 +24,12 @@ def map_mlflow_artifacts_to_s3(artifacts_uri: str, artifacts_root: str) -> str:
     """
     if not artifacts_uri.startswith("mlflow-artifacts:/"):
         raise ValueError(f"Unexpected artifacts_uri: {artifacts_uri}")
-    tail = artifacts_uri.removeprefix("mlflow-artifacts:/").lstrip("/")   # 'artifacts/...'
+    tail = artifacts_uri.removeprefix("mlflow-artifacts:/").lstrip("/")  # 'artifacts/...'
     base = artifacts_root.rstrip("/")
     if tail.startswith("artifacts/") and base.endswith("/artifacts"):
         base = base.rsplit("/artifacts", 1)[0]
     return f"{base}/{tail}"
+
 
 print("Tracking URI:", TRACKING)
 print("ARTIFACTS_URI:", ART_ROOT)
@@ -46,11 +51,13 @@ print("Direct S3 model dir:", s3_model_dir)
 with tempfile.TemporaryDirectory() as td:
     local_dir = mlflow.artifacts.download_artifacts(s3_model_dir, dst_path=td)
     import os as _os
+
     print("Downloaded to:", local_dir, "files:", _os.listdir(local_dir))
 
     # Load flavor (XGB -> PyFunc)
     try:
         from mlflow import xgboost as mlf_xgb
+
         model = mlf_xgb.load_model(local_dir)
         print("✅ Loaded XGBoost flavor")
     except Exception as e1:

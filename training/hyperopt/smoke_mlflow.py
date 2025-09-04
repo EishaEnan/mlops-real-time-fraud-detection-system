@@ -1,17 +1,22 @@
 # training/hyperopt/smoke_mlflow.py
 from __future__ import annotations
-import os, json, mlflow
+
+import json
+import os
+import random
+
+import mlflow
 from mlflow.tracking import MlflowClient
 from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import random
+from sklearn.model_selection import train_test_split
 
 TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5500")
 EXP_NAME = os.getenv("MLFLOW_EXPERIMENT", "smoke_fast")
 ARTIFACTS_URI = os.getenv("ARTIFACTS_URI", "").rstrip("/")
 EXP_ARTIFACT_DIR = os.getenv("EXP_ARTIFACT_DIR", EXP_NAME)
+
 
 def ensure_experiment(name: str) -> str:
     client = MlflowClient()
@@ -20,6 +25,7 @@ def ensure_experiment(name: str) -> str:
         return exp.experiment_id
     artifact_location = f"{ARTIFACTS_URI}/{EXP_ARTIFACT_DIR}" if ARTIFACTS_URI else None
     return client.create_experiment(name, artifact_location=artifact_location)
+
 
 def main():
     mlflow.set_tracking_uri(TRACKING)
@@ -56,6 +62,7 @@ def main():
 
     print(f"Run: {run_id}")
     print(f"UI:  {TRACKING}/#/experiments/{exp_id}/runs/{run_id}")
+
 
 if __name__ == "__main__":
     main()

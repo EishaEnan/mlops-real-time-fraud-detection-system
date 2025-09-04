@@ -1,8 +1,12 @@
 [project]
 name = "mlops-fraud"
 version = "0.1.0"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 description = "End-to-end fraud MLOps project"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Your Name" }]
+dependencies = []  # keep runtime deps in requirements.txt
 
 [build-system]
 requires = ["setuptools>=64", "wheel"]
@@ -10,4 +14,38 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["mlops_fraud*"]
 
+# -------------------------------
+# Ruff (linter + formatter)
+# -------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+exclude = [
+  "venv",
+  ".venv",
+  "notebooks",
+  "mlruns",
+  "reports",
+  "models",
+  "data",
+]
+
+[tool.ruff.lint]
+# Keep the core rules; extend as needed
+select = ["E", "F", "I", "B", "UP", "C4"]  # flake8, import sort, bugbear-lite, pyupgrade, comprehensions
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# Allow long lines in DAGs and promotion scripts (lots of shell/f-strings)
+"airflow/dags/*.py" = ["E501"]
+"scripts/*.py" = ["E701", "E702", "C408"]          # one-liners & dict(...) in throwaway scripts
+"tests/*.py" = ["E501", "E402"]                    # long lists & late imports in tests
+
+
+
+[tool.ruff.lint.isort]
+known-first-party = ["mlops_fraud"]
+combine-as-imports = true
+force-sort-within-sections = true

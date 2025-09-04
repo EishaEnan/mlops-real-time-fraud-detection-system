@@ -1,18 +1,30 @@
 # tests/test_features.py
 import numpy as np
 import pandas as pd
-from mlops_fraud.features import build_features, prepare_training, TYPE_CATS
+
+from mlops_fraud.features import TYPE_CATS, build_features, prepare_training
+
 
 def _mk_rows(types):
     rows = []
     for i, t in enumerate(types, start=1):
-        rows.append({
-            "step": i, "type": t, "amount": 1000.0 * i,
-            "nameOrig": f"C{i}", "oldbalanceOrg": 5000.0 * i, "newbalanceOrig": 4000.0 * i,
-            "nameDest": f"M{i}", "oldbalanceDest": 1000.0 * i, "newbalanceDest": 1500.0 * i,
-            "isFlaggedFraud": 0, "isFraud": int(i % 2 == 0),
-        })
+        rows.append(
+            {
+                "step": i,
+                "type": t,
+                "amount": 1000.0 * i,
+                "nameOrig": f"C{i}",
+                "oldbalanceOrg": 5000.0 * i,
+                "newbalanceOrig": 4000.0 * i,
+                "nameDest": f"M{i}",
+                "oldbalanceDest": 1000.0 * i,
+                "newbalanceDest": 1500.0 * i,
+                "isFlaggedFraud": 0,
+                "isFraud": int(i % 2 == 0),
+            }
+        )
     return pd.DataFrame(rows)
+
 
 def test_build_features():
     df = _mk_rows(["PAYMENT"])
@@ -23,11 +35,28 @@ def test_build_features():
         assert f"type_{cat}" in X.columns
 
     # engineered columns exist
-    for col in ["log_amount", "deltaOrig", "deltaDest", "abs_errorOrig", "abs_errorDest", "hour", "day", "is_high_value"]:
+    for col in [
+        "log_amount",
+        "deltaOrig",
+        "deltaDest",
+        "abs_errorOrig",
+        "abs_errorDest",
+        "hour",
+        "day",
+        "is_high_value",
+    ]:
         assert col in X.columns
 
     # raw balance columns and amount should be dropped
-    for col in ["oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest", "amount", "errorOrig", "errorDest"]:
+    for col in [
+        "oldbalanceOrg",
+        "newbalanceOrig",
+        "oldbalanceDest",
+        "newbalanceDest",
+        "amount",
+        "errorOrig",
+        "errorDest",
+    ]:
         assert col not in X.columns
 
     # label should not be present at inference
@@ -37,6 +66,7 @@ def test_build_features():
     assert np.isclose(X.loc[0, "log_amount"], np.log1p(1000.0))
     assert X.loc[0, "hour"] == df.loc[0, "step"] % 24
     assert X.loc[0, "day"] == df.loc[0, "step"] // 24
+
 
 def test_training_features():
     # Train sees some types; validation sees a different subset
@@ -53,4 +83,4 @@ def test_training_features():
 
     # Reindexing fills missing categories with zeros
     type_cols = [c for c in feature_order if c.startswith("type_")]
-    assert (Xva[type_cols].isin([0, 1]).all().all())
+    assert Xva[type_cols].isin([0, 1]).all().all()

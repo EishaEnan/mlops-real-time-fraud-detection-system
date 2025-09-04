@@ -1,6 +1,8 @@
 # airflow/dags/fraud_train_daily.py
 from __future__ import annotations
+
 import pendulum
+
 from airflow.models.dag import DAG
 from airflow.operators.bash import BashOperator
 
@@ -12,12 +14,11 @@ default_args = {"owner": "airflow", "retries": 1}
 with DAG(
     dag_id="fraud_train_daily",
     start_date=pendulum.datetime(2024, 1, 1, tz="UTC"),
-    schedule=None,           # change to '@daily' later
+    schedule=None,  # change to '@daily' later
     catchup=False,
     tags=["mlops", "fraud_detection"],
     default_args=default_args,
 ) as dag:
-
     BASE_ENV = {
         "PYTHONPATH": "/opt/project/src",
         "MLFLOW_TRACKING_URI": "{{ var.value.get('MLFLOW_TRACKING_URI', 'http://mlflow:5000') }}",
@@ -33,10 +34,7 @@ with DAG(
 
     split_data = BashOperator(
         task_id="dvc_split_data",
-        bash_command=(
-            "set -euo pipefail; "
-            "cd /opt/project && /home/airflow/.local/bin/dvc repro split_data --force"
-        ),
+        bash_command=("set -euo pipefail; cd /opt/project && /home/airflow/.local/bin/dvc repro split_data --force"),
         env=BASE_ENV,
         dag=dag,
     )
@@ -69,8 +67,7 @@ with DAG(
     train = BashOperator(
         task_id="train",
         bash_command=(
-            "set -euo pipefail; "
-            "cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/train_xgb.py"
+            "set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/train_xgb.py"
         ),
         env=dict(BASE_ENV, RUN_DIR=RUN_DIR),
         dag=dag,
@@ -79,8 +76,7 @@ with DAG(
     evaluate = BashOperator(
         task_id="eval",
         bash_command=(
-            "set -euo pipefail; "
-            "cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/evaluate.py"
+            "set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/evaluate.py"
         ),
         env=dict(BASE_ENV, RUN_DIR=RUN_DIR),
         dag=dag,
@@ -89,8 +85,7 @@ with DAG(
     promote = BashOperator(
         task_id="promote",
         bash_command=(
-            "set -euo pipefail; "
-            "cd /opt/project && PYTHONPATH=/opt/project/src python scripts/promote_best.py"
+            "set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python scripts/promote_best.py"
         ),
         env=dict(BASE_ENV, RUN_DIR=RUN_DIR),
         dag=dag,

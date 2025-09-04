@@ -1,19 +1,23 @@
-import os, json, tempfile
-import pandas as pd
-import numpy as np
+import json
+import os
+import tempfile
+
+import boto3
 import mlflow
 from mlflow.tracking import MlflowClient
-import boto3
+import numpy as np
+import pandas as pd
 
 # ----- Config from env -----
-TRACKING   = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
-ART_ROOT   = os.getenv("ARTIFACTS_URI", "").rstrip("/")  # e.g., s3://mlops-fraud-dvc
+TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+ART_ROOT = os.getenv("ARTIFACTS_URI", "").rstrip("/")  # e.g., s3://mlops-fraud-dvc
 MODEL_NAME = os.getenv("MODEL_NAME", "fraud_xgb")
-ALIAS      = os.getenv("MODEL_ALIAS", "staging")
-REGION     = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
+ALIAS = os.getenv("MODEL_ALIAS", "staging")
+REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
 
 assert ART_ROOT.startswith("s3://"), "ARTIFACTS_URI must be s3://<bucket>[/prefix]"
 assert REGION, "Set AWS_REGION or AWS_DEFAULT_REGION"
+
 
 # ----- Helpers -----
 def map_mlflow_artifacts_to_s3(artifacts_uri: str, artifacts_root: str) -> str:
@@ -26,6 +30,7 @@ def map_mlflow_artifacts_to_s3(artifacts_uri: str, artifacts_root: str) -> str:
     if tail.startswith("artifacts/") and base.endswith("/artifacts"):
         base = base[: -len("/artifacts")]
     return f"{base}/{tail}"
+
 
 def discover_registry_model_dir(exp_name: str) -> str:
     """
@@ -51,10 +56,11 @@ def discover_registry_model_dir(exp_name: str) -> str:
         raise RuntimeError(f"No registry MLmodel under s3://{bucket}/{models_prefix}")
     return "s3://" + bucket + "/" + newest_key.rsplit("/", 1)[0]  # .../artifacts
 
+
 # ----- Resolve model, run, and paths -----
 mlflow.set_tracking_uri(TRACKING)
 c = MlflowClient()
-mv  = c.get_model_version_by_alias(MODEL_NAME, ALIAS)
+mv = c.get_model_version_by_alias(MODEL_NAME, ALIAS)
 run = c.get_run(mv.run_id)
 exp = c.get_experiment(run.info.experiment_id)
 
@@ -75,7 +81,7 @@ with tempfile.TemporaryDirectory() as td:
     feature_order = None
     try:
         p = mlflow.artifacts.download_artifacts(f"runs:/{mv.run_id}/feature_order.json", dst_path=td)
-        with open(p, "r") as f:
+        with open(p) as f:
             feature_order = json.load(f)
         print(f"Loaded feature_order.json with {len(feature_order)} columns")
     except Exception as e:
@@ -84,6 +90,7 @@ with tempfile.TemporaryDirectory() as td:
     # ----- Load model (XGBoost → PyFunc) -----
     try:
         from mlflow import xgboost as mlf_xgb
+
         model = mlf_xgb.load_model(local_model_dir)
         flavor = "xgboost"
         print("✅ Loaded XGBoost flavor")
@@ -96,15 +103,19 @@ with tempfile.TemporaryDirectory() as td:
     # ----- Build features on a sample row and predict -----
     from mlops_fraud.features import build_features
 
-    sample = pd.DataFrame([{
-        "type": "PAYMENT",
-        "amount": 123.45,
-        "step": 1,
-        "oldbalanceOrg": 1000.0,
-        "newbalanceOrig": 876.55,
-        "oldbalanceDest": 500.0,
-        "newbalanceDest": 623.45,
-    }])
+    sample = pd.DataFrame(
+        [
+            {
+                "type": "PAYMENT",
+                "amount": 123.45,
+                "step": 1,
+                "oldbalanceOrg": 1000.0,
+                "newbalanceOrig": 876.55,
+                "oldbalanceDest": 500.0,
+                "newbalanceDest": 623.45,
+            }
+        ]
+    )
     X = build_features(sample, for_inference=True)
     if feature_order:
         X = X.reindex(columns=feature_order, fill_value=0)
