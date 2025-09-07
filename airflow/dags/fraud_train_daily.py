@@ -66,27 +66,21 @@ with DAG(
 
     train = BashOperator(
         task_id="train",
-        bash_command=(
-            "set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/train_xgb.py"
-        ),
+        bash_command=("set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/train_xgb.py"),
         env=dict(BASE_ENV, RUN_DIR=RUN_DIR),
         dag=dag,
     )
 
     evaluate = BashOperator(
         task_id="eval",
-        bash_command=(
-            "set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/evaluate.py"
-        ),
+        bash_command=("set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python training/pipelines/evaluate.py"),
         env=dict(BASE_ENV, RUN_DIR=RUN_DIR),
         dag=dag,
     )
 
     promote = BashOperator(
         task_id="promote",
-        bash_command=(
-            "set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python scripts/promote_best.py"
-        ),
+        bash_command=("set -euo pipefail; cd /opt/project && PYTHONPATH=/opt/project/src python scripts/promote_best.py"),
         env=dict(BASE_ENV, RUN_DIR=RUN_DIR),
         dag=dag,
     )
