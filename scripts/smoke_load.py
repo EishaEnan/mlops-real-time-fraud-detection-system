@@ -10,9 +10,7 @@ ALIAS = os.getenv("MODEL_ALIAS", "staging")
 TRACKING = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 ART_ROOT = os.getenv("ARTIFACTS_URI")  # e.g. s3://mlops-fraud-dvc  (no trailing slash)
 
-assert ART_ROOT and ART_ROOT.startswith("s3://"), (
-    "Set ARTIFACTS_URI=s3://<bucket>[/optional-prefix] in env (ex: s3://mlops-fraud-dvc)"
-)
+assert ART_ROOT and ART_ROOT.startswith("s3://"), "Set ARTIFACTS_URI=s3://<bucket>[/optional-prefix] in env (ex: s3://mlops-fraud-dvc)"
 
 
 def map_mlflow_artifacts_to_s3(artifacts_uri: str, artifacts_root: str) -> str:

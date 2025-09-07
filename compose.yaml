@@ -201,3 +201,15 @@ services:
       - .:/opt/project:rw
     command: airflow scheduler
     restart: unless-stopped
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    volumes:
+      - ./streamlit:/app/streamlit:ro
+    environment:
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
+      API_BASE_URL: http://api:8080
+    ports: ["8501:8501"]
+    depends_on: ["api"]

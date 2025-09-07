@@ -33,9 +33,7 @@ while True:
     for cp in resp.get("CommonPrefixes", []):
         folders.add(cp["Prefix"])
     if resp.get("IsTruncated"):
-        resp = s3.list_objects_v2(
-            Bucket=bucket, Prefix=scan_prefix, Delimiter="/", ContinuationToken=resp["NextContinuationToken"]
-        )
+        resp = s3.list_objects_v2(Bucket=bucket, Prefix=scan_prefix, Delimiter="/", ContinuationToken=resp["NextContinuationToken"])
     else:
         break
 

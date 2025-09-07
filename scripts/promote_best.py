@@ -78,10 +78,7 @@ def main():
         run = c.get_run(run_id)
         base = run.info.artifact_uri.rstrip("/")
         card_uri = f"{base}/model_card.md"
-        desc = (
-            f"Auto-promoted from exp='{EXPERIMENT_NAME}' run_id={run_id} "
-            f"| {metric_name}={metric_val:.4f}\nModel card: {card_uri}"
-        )
+        desc = f"Auto-promoted from exp='{EXPERIMENT_NAME}' run_id={run_id} | {metric_name}={metric_val:.4f}\nModel card: {card_uri}"
         c.update_model_version(name=MODEL_NAME, version=mv.version, description=desc)
         c.set_model_version_tag(MODEL_NAME, mv.version, "model_card", card_uri)
         # propagate if run already tagged with a canonical URI
